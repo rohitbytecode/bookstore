@@ -6,6 +6,13 @@ export interface Order {
     books: { bookId: Book; quantity: number; price: number }[];
     totalPrice: number;
     status: string;
-    address: string;
+    address: {
+    flat: string;
+    street: string;
+    city: string;
+    district: string;
+    state: string;
+    pincode: string;
+  };
     createdAt?: Date;
 }

@@ -19,15 +19,82 @@ import { FooterComponent } from '../../components/footer/footer';
       <div class="checkout-grid">
         <div class="form-section card">
           <h3>Shipping Information</h3>
-          <form (submit)="placeOrder()" #checkoutForm="ngForm">
-            <div class="form-group">
-              <label>Full Address</label>
-              <textarea [(ngModel)]="address" name="address" required minlength="10" #addressCtrl="ngModel" placeholder="Enter your full shipping address"></textarea>
-              <div *ngIf="addressCtrl.invalid && (addressCtrl.dirty || addressCtrl.touched)" class="validation-error">
-                <span *ngIf="addressCtrl.errors?.['required']">Address is required.</span>
-                <span *ngIf="addressCtrl.errors?.['minlength']">Address must be at least 10 characters long.</span>
-              </div>
-            </div>
+          <form (ngSubmit)="placeOrder()" #checkoutForm="ngForm">
+<div class= "form-grid">
+          <div class="form-group">
+  <label>Flat / House No.</label>
+  <input type="text"
+    [(ngModel)]="address.flat"
+    name="flat"
+    required
+    #flatCtrl="ngModel"
+    placeholder="Flat / House No." />
+
+  <div *ngIf="flatCtrl.invalid && flatCtrl.touched" class="validation-error">
+    Required
+  </div>
+</div>
+
+<div class="form-group">
+  <label>Street / Area</label>
+  <input type="text"
+    [(ngModel)]="address.street"
+    name="street"
+    required
+    #streetCtrl="ngModel"
+    placeholder="Street, Area, Landmark" />
+
+  <div *ngIf="streetCtrl.invalid && streetCtrl.touched" class="validation-error">
+    Required
+  </div>
+</div>
+
+<div class="form-group">
+  <label>City</label>
+  <input type="text"
+    [(ngModel)]="address.city"
+    name="city"
+    required readonly
+    #cityCtrl="ngModel"/>
+</div>
+
+<div class="form-group">
+  <label>District</label>
+  <input type="text"
+    [(ngModel)]="address.district"
+    name="district"
+    required
+    #districtCtrl="ngModel"/>
+</div>
+
+<div class="form-group">
+  <label>State</label>
+  <input
+    type="text"
+    [(ngModel)]="address.state"
+    name="state"
+    required
+    readonly
+  />
+</div>
+
+<div class="form-group">
+  <label>Pincode</label>
+  <input type="text"
+    maxlength="6"
+    pattern="^[1-9][0-9]{5}$"
+    [(ngModel)]="address.pincode"
+    name="pincode"
+    required
+    (blur)="lookupPincode()"
+    #pinCtrl="ngModel"
+    placeholder="6 digit pincode" />
+
+  <div *ngIf="pinCtrl.invalid && pinCtrl.touched" class="validation-error">
+    Enter valid 6 digit pincode
+  </div>
+</div>
+</div>
             
             <div *ngIf="errorMsg" class="error-msg" style="margin-top: 10px;">{{ errorMsg }}</div>
             <button type="submit" class="btn btn-primary w-100 mt-3" [disabled]="checkoutForm.invalid || loading">
@@ -53,26 +120,52 @@ import { FooterComponent } from '../../components/footer/footer';
     </main>
     <app-footer></app-footer>
   `,
-  styles: [`
-    .checkout-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 30px; margin-top: 30px; }
-    .summary-item { display: flex; justify-content: space-between; margin-bottom: 10px; }
-    .summary-total { display: flex; justify-content: space-between; font-size: 1.2rem; margin-top: 20px; }
-    .form-group { margin-bottom: 20px; }
-    .form-group label { display: block; font-weight: 600; margin-bottom: 5px; }
-    textarea { width: 100%; box-sizing: border-box; padding: 10px; border: 1.5px solid #ddd; border-radius: 8px; resize: vertical; height: 100px; }
-    textarea.ng-invalid.ng-touched { border-color: #dc2626; }
-    .validation-error { color: #dc2626; font-size: 12px; margin-top: 5px; }
-    .error-msg { background: #fee2e2; color: #dc2626; padding: 10px 15px; border-radius: 8px; font-size: 14px; }
-    .w-100 { width: 100%; padding: 13px; font-size: 16px; border-radius: 8px; font-weight: bold; }
-    .mt-3 { margin-top: 15px; }
-    button:disabled { opacity: 0.6; cursor: not-allowed; }
-  `]
+  styleUrls: ['./checkout.css']
 })
 export class CheckoutComponent implements OnInit {
   cart: Cart | null = null;
-  address = '';
+  address = {
+  flat: '',
+  street: '',
+  city: '',
+  district: '',
+  state: '',
+  pincode: ''
+};
   loading = false;
   errorMsg = '';
+  pincodeState = '';
+
+    states = [
+    'Andhra Pradesh',
+    'Arunachal Pradesh',
+    'Assam',
+    'Bihar',
+    'Chhattisgarh',
+    'Goa',
+    'Gujarat',
+    'Haryana',
+    'Himachal Pradesh',
+    'Jharkhand',
+    'Karnataka',
+    'Kerala',
+    'Madhya Pradesh',
+    'Maharashtra',
+    'Manipur',
+    'Meghalaya',
+    'Mizoram',
+    'Nagaland',
+    'Odisha',
+    'Punjab',
+    'Rajasthan',
+    'Sikkim',
+    'Tamil Nadu',
+    'Telangana',
+    'Tripura',
+    'Uttar Pradesh',
+    'Uttarakhand',
+    'West Bengal'
+  ];
 
   constructor(
     private cartService: CartService,
@@ -89,39 +182,87 @@ export class CheckoutComponent implements OnInit {
     });
   }
 
+  lookupPincode() {
+
+  this.errorMsg = '';
+
+  if (this.address.pincode.length !== 6) return;
+
+  fetch(`https://api.postalpincode.in/pincode/${this.address.pincode}`)
+  .then(res => res.json())
+  .then(data => {
+
+    if (data[0].Status === "Success") {
+
+      const post = data[0].PostOffice[0];
+
+      this.address.city = post.Block;
+      this.address.district = post.District;
+      this.address.state = post.State;
+
+      this.pincodeState = post.State;
+
+    } else {
+
+      this.errorMsg = "Invalid pincode";
+
+    }
+
+  });
+
+}
+
   getTotal() {
     return this.cart?.items.reduce((acc, item) => acc + (item.bookId.price * item.quantity), 0) || 0;
   }
 
   placeOrder() {
-    this.errorMsg = '';
-    
-    if (!this.address || this.address.trim().length < 10) {
-      this.errorMsg = 'Please enter a valid shipping address (at least 10 characters).';
-      return;
-    }
 
-    this.loading = true;
-    const orderData = {
-      books: this.cart?.items.map(item => ({
-        bookId: item.bookId._id,
-        quantity: item.quantity,
-        price: item.bookId.price
-      })),
-      totalPrice: this.getTotal(),
-      address: this.address
-    };
+  this.errorMsg = '';
 
-    this.orderService.placeOrder(orderData).subscribe({
-      next: () => {
-        this.loading = false;
-        alert('Order placed successfully!');
-        this.router.navigate(['/orders']);
-      },
-      error: (err) => {
-        this.loading = false;
-        this.errorMsg = err.error?.error || 'Failed to place order.';
-      }
-    });
+  if (
+    !this.address.flat ||
+    !this.address.street ||
+    !this.address.city ||
+    !this.address.district ||
+    !this.address.state ||
+    !this.address.pincode
+  ) {
+    this.errorMsg = 'Please fill complete shipping address.';
+    return;
   }
+
+  if (!/^[1-9][0-9]{5}$/.test(this.address.pincode)) {
+    this.errorMsg = 'Invalid pincode.';
+    return;
+  }
+
+  if (this.address.state !== this.pincodeState) {
+    this.errorMsg = 'Selected state does not match the pincode.';
+    return;
+  }
+
+  this.loading = true;
+    const orderData = {
+    books: this.cart?.items.map(item => ({
+      bookId: item.bookId._id,
+      quantity: item.quantity,
+      price: item.bookId.price
+    })),
+    totalPrice: this.getTotal(),
+    address: this.address
+  };
+
+  this.orderService.placeOrder(orderData).subscribe({
+    next: () => {
+      this.loading = false;
+      alert('Order placed successfully!');
+      this.router.navigate(['/orders']);
+    },
+    error: (err) => {
+      this.loading = false;
+      this.errorMsg = err.error?.error || 'Failed to place order.';
+    }
+  });
+}
 }

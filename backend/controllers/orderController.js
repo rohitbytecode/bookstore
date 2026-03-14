@@ -9,8 +9,15 @@ exports.createOrder = async (req, res) => {
             return res.status(400).send({ error: 'Order must contain at least one book.' });
         }
         
-        if (!address || address.trim().length < 10) {
-            return res.status(400).send({ error: 'Valid shipping address of at least 10 characters is required.' });
+        if (!address ||
+            !address.flat ||
+            !address.street ||
+            !address.city ||
+            !address.district ||
+            !address.state ||
+            !address.pincode
+        ) {
+            return res.status(400).send({ error: 'Invalid address' });
         }
 
         // Check for any invalid quantities
@@ -44,6 +51,7 @@ exports.createOrder = async (req, res) => {
             address
         });
         await order.save();
+        console.log("Order request received:", req.body);
 
         // Update stock
         await Promise.all(books.map(async (item) => {

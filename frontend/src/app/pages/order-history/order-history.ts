@@ -21,7 +21,12 @@ import { FooterComponent } from '../../components/footer/footer';
           </div>
           <div class="order-details">
             <p><strong>Date:</strong> {{ order.createdAt | date:'medium' }}</p>
-            <p><strong>Address:</strong> {{ order.address }}</p>
+            <div class="address-block">
+  <strong>Address:</strong>
+  <div>{{ order.address.flat }}, {{ order.address.street }}</div>
+  <div>{{ order.address.city }}, {{ order.address.district }}</div>
+  <div>{{ order.address.state }} - {{ order.address.pincode }}</div>
+</div>
             <div class="order-items">
               <div *ngFor="let item of order.books" class="order-item">
                 <span>{{ item.bookId.title }} x {{ item.quantity }}</span>
@@ -48,7 +53,12 @@ import { FooterComponent } from '../../components/footer/footer';
     .status-badge[data-status="Delivered"] { background: #d4edda; color: #155724; }
     .order-item { display: flex; justify-content: space-between; margin-bottom: 5px; color: var(--text-muted); }
     .order-footer { text-align: right; margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px; font-size: 1.1rem; }
-  `]
+    .address-block{
+  margin-top:6px;
+  line-height:1.5;
+  color:#555;
+}
+    `]
 })
 export class OrderHistoryComponent implements OnInit {
   orders: Order[] = [];
