@@ -1,32 +1,87 @@
-import { Injectable, signal, inject, Renderer2, RendererFactory2 } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import { Injectable, Renderer2, RendererFactory2, inject, signal } from '@angular/core';
+
+type ThemePreference = 'light' | 'dark';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ThemeService {
-  private renderer: Renderer2;
-  private rendererFactory = inject(RendererFactory2);
+  private readonly renderer: Renderer2;
+  private readonly rendererFactory = inject(RendererFactory2);
+  private readonly document = inject(DOCUMENT);
+  private readonly storageKey = 'theme';
+  private readonly mediaQuery = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+    ? window.matchMedia('(prefers-color-scheme: dark)')
+    : null;
 
-  currentTheme = signal<'light' | 'dark'>('light');
+  readonly currentTheme = signal<ThemePreference>('light');
 
   constructor() {
     this.renderer = this.rendererFactory.createRenderer(null, null);
-    this.loadTheme();
+
+    this.applyInitialTheme();
+    this.mediaQuery?.addEventListener('change', this.handleSystemThemeChange);
   }
 
-  toggleTheme() {
-    const newTheme = this.currentTheme() === 'light' ? 'dark' : 'light';
-    this.setTheme(newTheme);
+  toggleTheme(): void {
+    this.setTheme(this.currentTheme() === 'dark' ? 'light' : 'dark');
   }
 
-  private setTheme(theme: 'light' | 'dark') {
+  setTheme(theme: ThemePreference): void {
     this.currentTheme.set(theme);
-    localStorage.setItem('theme', theme);
-    this.renderer.setAttribute(document.body, 'data-theme', theme);
+    this.safeSetStorage(theme);
+    this.applyThemeToDom(theme);
   }
 
-  private loadTheme() {
-    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' || 'light';
-    this.setTheme(savedTheme);
+  private applyInitialTheme(): void {
+    const savedTheme = this.safeGetStorage();
+
+    if (savedTheme) {
+      this.setTheme(savedTheme);
+      return;
+    }
+
+    const systemTheme: ThemePreference = this.mediaQuery?.matches ? 'dark' : 'light';
+    this.currentTheme.set(systemTheme);
+    this.applyThemeToDom(systemTheme);
+  }
+
+  private applyThemeToDom(theme: ThemePreference): void {
+    this.renderer.setAttribute(this.document.body, 'data-theme', theme);
+    this.renderer.setAttribute(this.document.documentElement, 'data-theme', theme);
+  }
+
+  private readonly handleSystemThemeChange = (event: MediaQueryListEvent): void => {
+    const hasUserPreference = Boolean(this.safeGetStorage());
+
+    if (hasUserPreference) {
+      return;
+    }
+
+    this.currentTheme.set(event.matches ? 'dark' : 'light');
+    this.applyThemeToDom(this.currentTheme());
+  };
+
+  private safeGetStorage(): ThemePreference | null {
+    try {
+      const savedTheme = localStorage.getItem(this.storageKey);
+
+      if (savedTheme === 'light' || savedTheme === 'dark') {
+        return savedTheme;
+      }
+
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  private safeSetStorage(theme: ThemePreference): void {
+    try {
+      localStorage.setItem(this.storageKey, theme);
+    } catch {
+      // Ignore storage write failures (private mode / blocked storage)
+    }
   }
 }

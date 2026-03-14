@@ -1,8 +1,9 @@
-import { Component, inject } from '@angular/core';
-import { RouterLink, RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { Component, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth';
 import { CartService } from '../../services/cart';
+import { ThemeService } from '../../services/theme';
 
 @Component({
   selector: 'app-navbar',
@@ -13,6 +14,10 @@ import { CartService } from '../../services/cart';
       <div class="container nav-content">
         <a routerLink="/" class="logo">📚 BookStore</a>
         <div class="nav-links">
+          <button class="theme-toggle" (click)="themeService.toggleTheme()" [attr.aria-label]="themeToggleAriaLabel()">
+            {{ themeService.currentTheme() === 'dark' ? '🌞 Light' : '🌙 Dark' }}
+          </button>
+
           <ng-container *ngIf="!authService.isAdmin()">
             <a routerLink="/books">Browse</a>
             <a routerLink="/cart" class="cart-link">
@@ -45,13 +50,13 @@ import { CartService } from '../../services/cart';
   `,
   styles: [`
     .navbar {
-      background: white;
-      border-bottom: 1px solid #e8ecef;
+      background: var(--surface-1);
+      border-bottom: 1px solid var(--border-color);
       padding: 0;
       position: sticky;
       top: 0;
       z-index: 1000;
-      box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+      box-shadow: var(--shadow);
     }
     .nav-content {
       display: flex;
@@ -70,6 +75,21 @@ import { CartService } from '../../services/cart';
       gap: 8px;
       align-items: center;
     }
+    .theme-toggle {
+      border: 1px solid var(--border-color);
+      color: var(--text-dark);
+      background: var(--surface-1);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .theme-toggle:hover {
+      background: var(--surface-2);
+      border-color: var(--primary-blue);
+      color: var(--primary-blue);
+    }
     .nav-links > a {
       text-decoration: none;
       color: var(--text-dark);
@@ -78,24 +98,24 @@ import { CartService } from '../../services/cart';
       border-radius: 6px;
       transition: 0.2s;
     }
-    .nav-links > a:hover { background: #f0f4ff; color: var(--primary-blue); }
+    .nav-links > a:hover { background: var(--surface-2); color: var(--primary-blue); }
     .cart-link { position: relative; }
     .badge {
       background: var(--primary-blue);
-      color: white;
+      color: var(--white);
       padding: 2px 7px;
       border-radius: 12px;
       font-size: 11px;
       font-weight: 700;
       margin-left: 4px;
     }
-    .nav-btn { border: 1px solid #ddd; }
-    .nav-btn-primary { background: var(--primary-blue) !important; color: white !important; }
+    .nav-btn { border: 1px solid var(--border-color); }
+    .nav-btn-primary { background: var(--primary-blue) !important; color: var(--white) !important; }
     .nav-btn-primary:hover { background: var(--secondary-blue) !important; }
     .dropdown { position: relative; }
     .dropdown-trigger {
-      background: none;
-      border: 1px solid #ddd;
+      background: var(--surface-1);
+      border: 1px solid var(--border-color);
       padding: 8px 14px;
       border-radius: 6px;
       cursor: pointer;
@@ -106,21 +126,20 @@ import { CartService } from '../../services/cart';
       align-items: center;
       gap: 5px;
     }
-    .dropdown-trigger:hover { background: #f0f4ff; border-color: var(--primary-blue); }
+    .dropdown-trigger:hover { background: var(--surface-2); border-color: var(--primary-blue); }
     .dropdown-content {
       display: none;
       position: absolute;
       right: 0;
       top: 100%;
-      background: white;
+      background: var(--surface-1);
       min-width: 200px;
-      border: 1px solid #e8ecef;
+      border: 1px solid var(--border-color);
       border-radius: 10px;
       padding: 8px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+      box-shadow: var(--shadow-lg);
       animation: fadeIn 0.2s ease;
-      /* Hover Bridge */
-      border-top: 10px solid transparent; 
+      border-top: 10px solid transparent;
       margin-top: -10px;
     }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
@@ -134,8 +153,8 @@ import { CartService } from '../../services/cart';
       font-size: 14px;
       cursor: pointer;
     }
-    .dropdown-content a:hover { background: #f0f4ff; color: var(--primary-blue); }
-    .dropdown-divider { border-top: 1px solid #eee; margin: 5px 0; }
+    .dropdown-content a:hover { background: var(--surface-2); color: var(--primary-blue); }
+    .dropdown-divider { border-top: 1px solid var(--border-color); margin: 5px 0; }
     .admin-link { color: #7c3aed !important; font-weight: 600; }
     .logout-link { color: var(--error) !important; }
   `]
@@ -143,4 +162,11 @@ import { CartService } from '../../services/cart';
 export class NavbarComponent {
   public authService = inject(AuthService);
   public cartService = inject(CartService);
+  public themeService = inject(ThemeService);
+
+  themeToggleAriaLabel(): string {
+    return this.themeService.currentTheme() === 'dark'
+      ? 'Switch to light mode'
+      : 'Switch to dark mode';
+  }
 }
