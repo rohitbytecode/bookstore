@@ -40,11 +40,11 @@ import { NavbarComponent } from '../../../components/navbar/navbar';
                 <td>{{ user.name }}</td>
                 <td>{{ user.email }}</td>
                 <td>
-                  <span class="role-badge" [attr.data-role]="user.role">{{ user.role }}</span>
+                  <span class="role-badge" [attr.data-role]="user.role === 'user' ? 'customer' : user.role">{{ user.role === 'user' ? 'CUSTOMER' : user.role.toUpperCase() }}</span>
                 </td>
                 <td>
-                  <button class="action-btn" (click)="toggleRole(user)" [title]="user.role === 'admin' ? 'Demote to User' : 'Promote to Admin'">
-                    {{ user.role === 'admin' ? '👤 Set User' : '🛡️ Set Admin' }}
+                  <button class="action-btn" (click)="toggleRole(user)" [title]="user.role === 'admin' ? 'Demote to Customer' : 'Promote to Admin'">
+                    {{ user.role === 'admin' ? '👤 Set Customer' : '🛡️ Set Admin' }}
                   </button>
                 </td>
               </tr>
@@ -66,7 +66,7 @@ import { NavbarComponent } from '../../../components/navbar/navbar';
     th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
     .role-badge { padding: 4px 10px; border-radius: 4px; font-size: 13px; font-weight: 500; text-transform: uppercase; }
     .role-badge[data-role="admin"] { background: #e0f2fe; color: #0369a1; }
-    .role-badge[data-role="user"] { background: #f3f4f6; color: #4b5563; }
+    .role-badge[data-role="customer"] { background: #f3f4f6; color: #4b5563; }
     .action-btn { background: none; border: 1px solid #ddd; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; transition: 0.2s; }
     .action-btn:hover { background: #f0f0f0; border-color: #bbb; }
   `]
@@ -86,7 +86,7 @@ export class ManageUsersComponent implements OnInit {
 
   toggleRole(user: User) {
     if (!user._id) return;
-    const newRole = user.role === 'admin' ? 'user' : 'admin';
+    const newRole = user.role === 'admin' ? 'customer' : 'admin';
     if (confirm(`Are you sure you want to change ${user.name}'s role to ${newRole}?`)) {
       this.userService.updateRole(user._id, newRole).subscribe({
         next: () => {
